@@ -13,7 +13,7 @@ Services must change state and publish events atomically. Dual writes lose or in
 4. Event sourcing
 
 ## 3. Decision
-Outbox table in each service schema, written in the same transaction as the state change. A single leader-elected (ShedLock) polling publisher per service reads in order and publishes with an idempotent producer. At-least-once delivery; consumers deduplicate by eventId.
+Outbox table in each service schema, written in the same transaction as the state change. A single polling publisher per service at any moment (elected per batch by a transaction-scoped Postgres advisory lock) reads in order and publishes with an idempotent producer. At-least-once delivery; consumers deduplicate by eventId.
 
 ## 4. Trade-offs
 Polling adds up to ~200 ms latency and DB load (indexed partial scan). A single publisher caps throughput (thousands/s, far above control-plane rates). Debezium would remove polling but adds Kafka Connect and replication-slot operations. It is the documented upgrade path.

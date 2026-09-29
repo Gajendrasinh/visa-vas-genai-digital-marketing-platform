@@ -27,10 +27,18 @@ spring:
         jwt:
           issuer-uri: ${OIDC_ISSUER_URI:http://localhost:8180/realms/vasmkt}
           audiences: ${OIDC_AUDIENCE:vasmkt-api}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9094}
   flyway:
     schemas: customer
     default-schema: customer
     create-schemas: false
+
+platform:
+  kafka:
+    schema-registry-url: ${SCHEMA_REGISTRY_URL:http://localhost:8085}
+    # Shared environments register schemas from CI; services must not create new versions.
+    auto-register-schemas: ${KAFKA_AUTO_REGISTER_SCHEMAS:true}
 
 springdoc:
   api-docs:

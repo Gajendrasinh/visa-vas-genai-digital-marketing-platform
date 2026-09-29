@@ -1,19 +1,20 @@
-package com.vasmarketing.platform.idempotency;
+package com.vasmarketing.platform.persistence;
 
 import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 import org.springframework.beans.factory.InitializingBean;
 
 /**
- * Applies platform-owned tables (classpath:db/platform) with a separate history table, so their
- * versions are independent of each service's own migrations.
+ * Applies platform-owned tables from {@code classpath:db/platform} in every platform jar, with a
+ * separate history table. Platform versions (V1 idempotency, V2 outbox, ...) are therefore
+ * independent of each service's own migration versions.
  */
-final class PlatformMigrations implements InitializingBean {
+public final class PlatformMigrations implements InitializingBean {
 
   private final DataSource dataSource;
   private final String schema;
 
-  PlatformMigrations(DataSource dataSource, String schema) {
+  public PlatformMigrations(DataSource dataSource, String schema) {
     this.dataSource = dataSource;
     this.schema = schema;
   }

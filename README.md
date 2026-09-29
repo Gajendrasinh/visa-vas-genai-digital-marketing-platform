@@ -4,7 +4,7 @@ A reference platform for issuer-run, card-linked digital marketing: real-time be
 
 All data is synthetic. The project is inspired by public descriptions of card-network value-added services and uses no proprietary implementation details.
 
-**Status: Phases 0–3 complete (architecture, build, core domain + PostgreSQL, REST APIs + security). Next: Phase 4, Kafka + transactional outbox.** See [docs/roadmap.md](docs/roadmap.md).
+**Status: Phases 0–4 complete (architecture, build, domain + PostgreSQL, REST + security, Kafka + outbox). Next: Phase 5, streaming + data platform.** See [docs/roadmap.md](docs/roadmap.md).
 
 ## Local setup
 

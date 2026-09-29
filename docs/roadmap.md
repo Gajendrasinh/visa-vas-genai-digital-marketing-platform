@@ -10,6 +10,7 @@ Each phase ends with the same gate: **build → test → review → fix → docu
 | 1 Repository + build | Done | `./mvnw verify`, `uv run pytest`, `make up-core` healthy with the topic catalog, schema isolation and Keycloak roles checked |
 | 2 Core domain + PostgreSQL | Done | 164 Java tests: domain, Testcontainers Postgres (migrations run as the least-privileged role), ArchUnit hexagonal rules, SpotBugs clean, ≥ 94 % line coverage per service |
 | 3 REST APIs + security baseline | Done | Controllers + OpenAPI for 4 services and the gateway; RFC 9457 errors; ETag/If-Match; DB-backed idempotency; keyset pagination; JWT + RBAC with generated role-matrix tests; cross-tenant 404 tests; real Keycloak token → gateway → service smoke test |
+| 4 Kafka + events | Done | Real broker + registry tests: committed-only and ordered delivery, broker outage loses nothing, duplicate applied once, poison → DLQ after 3 attempts → replay, non-Avro → DLQ; services' events verified on Kafka; registry gate rejects a breaking change |
 
 ## Changes to the requested phase order
 

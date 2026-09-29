@@ -41,7 +41,7 @@ class IdempotencyIntegrationTest {
   @DynamicPropertySource
   static void database(DynamicPropertyRegistry registry) {
     ServicePostgres.register(registry, "idem");
-    registry.add("platform.idempotency.schema", () -> "idem");
+    registry.add("platform.persistence.schema", () -> "idem");
   }
 
   @MockitoBean private JwtDecoder jwtDecoder;

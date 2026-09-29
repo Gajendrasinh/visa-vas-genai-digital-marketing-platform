@@ -1,0 +1,23 @@
+{
+  "type": "record",
+  "name": "CampaignLifecycleEvent",
+  "namespace": "com.vasmarketing.events.campaign",
+  "doc": "Topic campaign.events (key = campaignId). Carries a snapshot so consumers never call back.",
+  "fields": [
+    {"name": "metadata", "type": "com.vasmarketing.events.EventMetadata"},
+    {"name": "campaignId", "type": "string"},
+    {"name": "transition", "type": {"type": "enum", "name": "CampaignTransition",
+      "symbols": ["CREATED", "SUBMITTED", "APPROVED", "REJECTED", "PUBLISHED", "ACTIVATED", "PAUSED", "RESUMED", "COMPLETED", "ARCHIVED", "UNKNOWN"],
+      "default": "UNKNOWN"}},
+    {"name": "status", "type": "string"},
+    {"name": "actor", "type": "string"},
+    {"name": "name", "type": "string"},
+    {"name": "segmentId", "type": "string"},
+    {"name": "offerId", "type": "string"},
+    {"name": "startAt", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "endAt", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "channels", "type": {"type": "array", "items": "string"}},
+    {"name": "approvedVariantIds", "type": {"type": "array", "items": "string"}, "default": []},
+    {"name": "reason", "type": ["null", "string"], "default": null}
+  ]
+}

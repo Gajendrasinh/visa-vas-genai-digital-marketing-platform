@@ -76,3 +76,30 @@ jobs:
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  schemas:
+    name: Event schema compatibility (branch vs main)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+      - run: cp .env.example .env
+      - run: docker compose --env-file .env --profile core up -d --wait kafka schema-registry
+      - name: Register main's schemas as the baseline
+        run: |
+          if git cat-file -e origin/main:platform/event-schemas/pom.xml 2>/dev/null; then
+            git worktree add /tmp/main origin/main
+            (cd /tmp/main && ./mvnw -B -q -Pschema-registry -pl platform/event-schemas process-classes schema-registry:register)
+          else
+            echo "main has no event schemas yet; nothing to compare against"
+          fi
+      - name: This branch must be BACKWARD_TRANSITIVE compatible
+        run: ./mvnw -B -Pschema-registry -pl platform/event-schemas verify -DskipTests
+      - if: always()
+        run: docker compose --env-file .env --profile core down -v

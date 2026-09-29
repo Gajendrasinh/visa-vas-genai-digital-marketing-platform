@@ -8,6 +8,7 @@ import com.vasmarketing.campaign.domain.model.ContentAuthor;
 import com.vasmarketing.campaign.domain.model.PromptReference;
 import com.vasmarketing.campaign.domain.model.VariantContent;
 import com.vasmarketing.campaign.domain.model.VariantId;
+import com.vasmarketing.campaign.domain.port.CampaignEventPublisher;
 import com.vasmarketing.campaign.domain.port.CampaignRepository;
 import com.vasmarketing.platform.types.Actor;
 import com.vasmarketing.platform.types.DomainRuleViolation;
@@ -23,11 +24,17 @@ public class CampaignAuthoringService {
 
   private final CampaignRepository repository;
   private final CampaignLoader loader;
+  private final CampaignEventPublisher events;
   private final Clock clock;
 
-  CampaignAuthoringService(CampaignRepository repository, CampaignLoader loader, Clock clock) {
+  CampaignAuthoringService(
+      CampaignRepository repository,
+      CampaignLoader loader,
+      CampaignEventPublisher events,
+      Clock clock) {
     this.repository = repository;
     this.loader = loader;
+    this.events = events;
     this.clock = clock;
   }
 
@@ -36,7 +43,9 @@ public class CampaignAuthoringService {
     Campaign campaign =
         Campaign.create(
             actor, command.details(), command.origin(), command.aiRequestId(), clock.instant());
-    return repository.save(campaign);
+    Campaign saved = repository.save(campaign);
+    events.publish(saved, campaign.pullEvents());
+    return saved;
   }
 
   public Campaign updateDetails(

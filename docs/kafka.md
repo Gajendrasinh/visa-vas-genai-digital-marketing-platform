@@ -2,9 +2,11 @@
 
 Status: Phase 0 design. See [ADR-002](decisions/ADR-002-kafka-event-backbone.md), [ADR-003](decisions/ADR-003-transactional-outbox.md), [ADR-013](decisions/ADR-013-avro-schema-registry.md) and [ADR-014](decisions/ADR-014-kafka-streams.md).
 
-## 1. Event envelope
+## 1. Event metadata
 
-All events are Avro records wrapping a common envelope. Kafka **headers** duplicate the routing and tracing fields, so infrastructure (DLQ tooling, tracing, Connect) can read them without deserializing.
+> **As implemented (Phase 4):** the metadata below is an embedded `metadata` record (`EventMetadata`) in every event, not an outer envelope. The domain payload fields sit next to it. Schemas are in `platform/event-schemas`.
+
+All events are Avro records carrying common metadata. Kafka **headers** duplicate the routing and tracing fields, so infrastructure (DLQ tooling, tracing, Connect) can read them without deserializing.
 
 | Field | Type | Purpose |
 |---|---|---|
@@ -91,7 +93,9 @@ sequenceDiagram
 ```
 
 - **Delivery semantics: at-least-once.** A crash after send and before the update republishes the event. Consumers dedup by `eventId`.
-- **Ordering:** a single active publisher per service (ShedLock leader lease in Postgres) reads in `created_at, id` order. Multi-instance `SKIP LOCKED` was rejected because two instances can publish the same aggregate's events out of order.
+- **Storage:** rows hold the event as registry-free Avro binary plus its generated class name (restricted to `com.vasmarketing.events.*`). So a Schema Registry outage delays publishing but never blocks business writes.
+- **Ordering:** a single active publisher per service. Each batch runs in a transaction holding `pg_try_advisory_xact_lock(hash(service))`, so there is no extra library or lease table. Other instances skip while the leader holds the lock. A failed send stops the batch so later events never overtake it.
+- *(Original design, superseded:* ShedLock leader lease in Postgres*)* reads in `created_at, id` order. Multi-instance `SKIP LOCKED` was rejected because two instances can publish the same aggregate's events out of order.
 - **Throughput:** a single publisher with batching handles a few thousand events/s. That is well above control-plane write rates (campaign/offer/segment changes). Debezium CDC is the documented upgrade path ([ADR-003](decisions/ADR-003-transactional-outbox.md)).
 - **Housekeeping:** published rows are deleted after 3 days. Alerts fire on `outbox_oldest_unpublished_age_seconds > 60`.
 
@@ -149,10 +153,11 @@ A large campaign concentrates on one `campaignId` key, which creates a **hot par
 ## 6. Schema evolution
 
 - Avro schemas live in `platform/event-schemas/src/main/avro/`. Classes are generated at build time.
-- Registry subject strategy: `TopicRecordNameStrategy`, which allows several event types per topic (`campaign.events`).
+- Registry subject strategy: **`TopicNameStrategy`** (`<topic>-value`), with **one record type per topic**. The kind of change is an enum field with a default (`transition`, `change`), and each event carries a state snapshot so consumers never call back. *(Changed from the original TopicRecordNameStrategy plan: one schema per subject keeps compatibility checks, tooling and consumers simple.)*
+- The build exports each topic's full schema exactly as serializers register it (`RegistrySchemas`, nested records inlined). `make schemas-check` and the CI `schemas` job test it against the registry. CI first registers `main`'s schemas as the baseline, so an incompatible change fails the PR. A deliberately breaking change was verified to fail with `READER_FIELD_MISSING_DEFAULT_VALUE`.
 - Compatibility: **BACKWARD_TRANSITIVE**. New readers read all old data. Allowed: add a field with a default, remove a field that had a default. Not allowed without a new major version: renaming, type changes, removing required fields.
 - A **breaking change** means a new event type version (`CampaignPublishedV2`), a dual-publish period, consumer migration, then retirement of the old type. Topic names do not carry a version.
-- CI runs a registry compatibility check (`mvn schema-registry:test-compatibility` against a registry container loaded with the schemas from `main`). An incompatible schema fails the PR.
+- Producers in shared environments run with `auto.register.schemas=false` (`KAFKA_AUTO_REGISTER_SCHEMAS`), so only CI registers new versions.
 
 ## 7. Security
 

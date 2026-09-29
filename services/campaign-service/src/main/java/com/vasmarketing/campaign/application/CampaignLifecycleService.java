@@ -2,6 +2,7 @@ package com.vasmarketing.campaign.application;
 
 import com.vasmarketing.campaign.domain.model.Campaign;
 import com.vasmarketing.campaign.domain.model.CampaignId;
+import com.vasmarketing.campaign.domain.port.CampaignEventPublisher;
 import com.vasmarketing.campaign.domain.port.CampaignRepository;
 import com.vasmarketing.platform.types.Actor;
 import com.vasmarketing.platform.types.Precondition;
@@ -18,11 +19,17 @@ public class CampaignLifecycleService {
 
   private final CampaignRepository repository;
   private final CampaignLoader loader;
+  private final CampaignEventPublisher events;
   private final Clock clock;
 
-  CampaignLifecycleService(CampaignRepository repository, CampaignLoader loader, Clock clock) {
+  CampaignLifecycleService(
+      CampaignRepository repository,
+      CampaignLoader loader,
+      CampaignEventPublisher events,
+      Clock clock) {
     this.repository = repository;
     this.loader = loader;
+    this.events = events;
     this.clock = clock;
   }
 
@@ -61,6 +68,8 @@ public class CampaignLifecycleService {
       BiConsumer<Campaign, Instant> transition) {
     Campaign campaign = loader.loadForUpdate(actor, id, precondition);
     transition.accept(campaign, clock.instant());
-    return repository.save(campaign);
+    Campaign saved = repository.save(campaign);
+    events.publish(saved, campaign.pullEvents());
+    return saved;
   }
 }

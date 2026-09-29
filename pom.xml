@@ -19,10 +19,13 @@
 
   <modules>
     <module>platform/common-types</module>
+    <module>platform/event-schemas</module>
     <module>platform/common-web</module>
     <module>platform/common-security</module>
     <module>platform/test-support</module>
+    <module>platform/common-persistence</module>
     <module>platform/common-idempotency</module>
+    <module>platform/common-kafka</module>
     <module>services/api-gateway</module>
     <module>services/campaign-service</module>
     <module>services/offer-service</module>
@@ -40,6 +43,10 @@
     <archunit.version>1.5.1</archunit.version>
     <!-- springdoc 3.0.x targets Boot 4.0.x; 3.1.x targets Boot 4.1. -->
     <springdoc.version>3.0.3</springdoc.version>
+    <!-- Confluent 8.1.x is built against Apache Kafka 4.1, the client version Boot 4.0 manages. -->
+    <confluent.version>8.1.6</confluent.version>
+    <avro.version>1.12.1</avro.version>
+    <schema.registry.url>http://localhost:8085</schema.registry.url>
 
     <!-- Build plugins -->
     <spotless-plugin.version>3.10.3</spotless-plugin.version>
@@ -55,8 +62,39 @@
     <argLine/>
   </properties>
 
+  <repositories>
+    <repository>
+      <id>confluent</id>
+      <url>https://packages.confluent.io/maven/</url>
+      <releases><enabled>true</enabled></releases>
+      <snapshots><enabled>false</enabled></snapshots>
+    </repository>
+  </repositories>
+  <pluginRepositories>
+    <pluginRepository>
+      <id>confluent</id>
+      <url>https://packages.confluent.io/maven/</url>
+      <snapshots><enabled>false</enabled></snapshots>
+    </pluginRepository>
+  </pluginRepositories>
+
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>org.apache.avro</groupId>
+        <artifactId>avro</artifactId>
+        <version>${avro.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.confluent</groupId>
+        <artifactId>kafka-avro-serializer</artifactId>
+        <version>${confluent.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.vasmarketing</groupId>
+        <artifactId>event-schemas</artifactId>
+        <version>${project.version}</version>
+      </dependency>
       <dependency>
         <groupId>org.springframework.cloud</groupId>
         <artifactId>spring-cloud-dependencies</artifactId>
@@ -83,6 +121,16 @@
         <groupId>org.springdoc</groupId>
         <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
         <version>${springdoc.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.vasmarketing</groupId>
+        <artifactId>common-persistence</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.vasmarketing</groupId>
+        <artifactId>common-kafka</artifactId>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>com.vasmarketing</groupId>

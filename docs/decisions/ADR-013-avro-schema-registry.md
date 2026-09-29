@@ -13,7 +13,7 @@ Events evolve independently of consumers; breaking changes must be caught before
 4. Avro + registry
 
 ## 3. Decision
-Avro with a Confluent-compatible Schema Registry, TopicRecordNameStrategy (multiple event types per topic), BACKWARD_TRANSITIVE compatibility, and a CI compatibility check.
+Avro with a Confluent-compatible Schema Registry, TopicNameStrategy with one record type per topic (event kind as an enum with a default; state snapshot carried), BACKWARD_TRANSITIVE compatibility, and a CI compatibility check.
 
 ## 4. Trade-offs
 Binary payloads are less readable (tooling needed). Avro has the best Kafka Connect and Parquet interoperability for the lake.

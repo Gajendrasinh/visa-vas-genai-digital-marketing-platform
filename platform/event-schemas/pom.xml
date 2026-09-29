@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.vasmarketing</groupId>
+    <artifactId>vas-marketing-platform</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>event-schemas</artifactId>
+  <name>platform :: event-schemas</name>
+  <description>Avro schemas of every Kafka event (the inter-service contract) and generated classes.</description>
+
+  <properties>
+    <!-- Generated code is excluded from coverage; the schema tests below exercise it. -->
+    <jacoco.skip>true</jacoco.skip>
+    <spotbugs.skip>true</spotbugs.skip>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.avro</groupId>
+      <artifactId>avro</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.avro</groupId>
+        <artifactId>avro-maven-plugin</artifactId>
+        <version>${avro.version}</version>
+        <executions>
+          <execution>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>schema</goal>
+            </goals>
+            <configuration>
+              <sourceDirectory>${project.basedir}/src/main/avro</sourceDirectory>
+              <imports>
+                <import>${project.basedir}/src/main/avro/EventMetadata.avsc</import>
+              </imports>
+              <stringType>String</stringType>
+              <enableDecimalLogicalType>true</enableDecimalLogicalType>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <!-- Generated sources are not hand-formatted. -->
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <configuration>
+          <java>
+            <excludes>
+              <exclude>target/**</exclude>
+            </excludes>
+          </java>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <!-- mvn -Pschema-registry -pl platform/event-schemas verify: fails if any schema is incompatible
+         (BACKWARD_TRANSITIVE) with what the registry already holds. Run by CI against a registry. -->
+    <profile>
+      <id>schema-registry</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>3.6.4</version>
+            <executions>
+              <execution>
+                <id>export-registry-schemas</id>
+                <phase>process-classes</phase>
+                <goals>
+                  <goal>java</goal>
+                </goals>
+                <configuration>
+                  <mainClass>com.vasmarketing.events.registry.RegistrySchemas</mainClass>
+                  <arguments>
+                    <argument>${project.build.directory}/registry-schemas</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-schema-registry-maven-plugin</artifactId>
+            <version>${confluent.version}</version>
+            <configuration>
+              <schemaRegistryUrls>
+                <param>${schema.registry.url}</param>
+              </schemaRegistryUrls>
+              <subjects>
+                <campaign.events-value>target/registry-schemas/campaign.events-value.avsc</campaign.events-value>
+                <offer.events-value>target/registry-schemas/offer.events-value.avsc</offer.events-value>
+                <merchant.reference-value>target/registry-schemas/merchant.reference-value.avsc</merchant.reference-value>
+              </subjects>
+            </configuration>
+            <executions>
+              <execution>
+                <id>check-compatibility</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>test-compatibility</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>

@@ -1,0 +1,17 @@
+{
+  "type": "record",
+  "name": "EventMetadata",
+  "namespace": "com.vasmarketing.events",
+  "doc": "Common metadata carried by every event (docs/kafka.md §1).",
+  "fields": [
+    {"name": "eventId", "type": "string", "doc": "UUID; consumers deduplicate on it"},
+    {"name": "eventType", "type": "string", "doc": "e.g. CampaignPublished"},
+    {"name": "schemaVersion", "type": "int", "default": 1},
+    {"name": "source", "type": "string", "doc": "producing service"},
+    {"name": "tenantId", "type": ["null", "string"], "default": null, "doc": "issuer; null for network-wide reference data"},
+    {"name": "occurredAt", "type": {"type": "long", "logicalType": "timestamp-millis"}, "doc": "event (business) time"},
+    {"name": "producedAt", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "correlationId", "type": ["null", "string"], "default": null},
+    {"name": "causationId", "type": ["null", "string"], "default": null}
+  ]
+}

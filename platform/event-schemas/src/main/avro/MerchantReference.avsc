@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "MerchantReference",
+  "namespace": "com.vasmarketing.events.merchant",
+  "doc": "Compacted topic merchant.reference (key = merchantId): latest state per merchant.",
+  "fields": [
+    {"name": "metadata", "type": "com.vasmarketing.events.EventMetadata"},
+    {"name": "merchantId", "type": "string"},
+    {"name": "name", "type": "string"},
+    {"name": "mcc", "type": "string"},
+    {"name": "category", "type": "string"},
+    {"name": "countryCode", "type": "string"},
+    {"name": "active", "type": "boolean"}
+  ]
+}

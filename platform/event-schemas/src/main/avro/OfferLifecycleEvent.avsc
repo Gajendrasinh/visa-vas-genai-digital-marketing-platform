@@ -1,0 +1,20 @@
+{
+  "type": "record",
+  "name": "OfferLifecycleEvent",
+  "namespace": "com.vasmarketing.events.offer",
+  "doc": "Topic offer.events (key = offerId).",
+  "fields": [
+    {"name": "metadata", "type": "com.vasmarketing.events.EventMetadata"},
+    {"name": "offerId", "type": "string"},
+    {"name": "change", "type": {"type": "enum", "name": "OfferChange",
+      "symbols": ["CREATED", "TERMS_UPDATED", "RULES_REPLACED", "ACTIVATED", "PAUSED", "EXPIRED", "EXHAUSTED", "UNKNOWN"],
+      "default": "UNKNOWN"}},
+    {"name": "status", "type": "string"},
+    {"name": "merchantId", "type": "string"},
+    {"name": "title", "type": "string"},
+    {"name": "category", "type": "string"},
+    {"name": "startAt", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "endAt", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "ruleSetVersion", "type": "int"}
+  ]
+}

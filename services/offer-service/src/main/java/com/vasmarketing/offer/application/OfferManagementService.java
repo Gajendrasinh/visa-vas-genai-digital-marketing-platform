@@ -5,8 +5,10 @@ import com.vasmarketing.offer.domain.model.Offer;
 import com.vasmarketing.offer.domain.model.OfferCategory;
 import com.vasmarketing.offer.domain.model.OfferErrors;
 import com.vasmarketing.offer.domain.model.OfferId;
+import com.vasmarketing.offer.domain.model.OfferLifecycleChange;
 import com.vasmarketing.offer.domain.model.OfferStatus;
 import com.vasmarketing.offer.domain.model.OfferTerms;
+import com.vasmarketing.offer.domain.port.OfferEventPublisher;
 import com.vasmarketing.offer.domain.port.OfferRepository;
 import com.vasmarketing.platform.types.Actor;
 import com.vasmarketing.platform.types.CursorPage;
@@ -28,17 +30,24 @@ public class OfferManagementService {
 
   private final OfferRepository repository;
   private final OfferSummaries summaries;
+  private final OfferEventPublisher events;
   private final Clock clock;
 
-  OfferManagementService(OfferRepository repository, OfferSummaries summaries, Clock clock) {
+  OfferManagementService(
+      OfferRepository repository,
+      OfferSummaries summaries,
+      OfferEventPublisher events,
+      Clock clock) {
     this.repository = repository;
     this.summaries = summaries;
+    this.events = events;
     this.clock = clock;
   }
 
   public Offer create(Actor actor, OfferTerms terms, List<EligibilityRule> rules) {
     requireUniqueTitle(actor, terms.title());
-    return repository.save(Offer.create(actor, terms, rules, clock.instant()));
+    return saveAndPublish(
+        Offer.create(actor, terms, rules, clock.instant()), OfferLifecycleChange.CREATED);
   }
 
   public Offer updateTerms(Actor actor, OfferId id, OfferTerms terms, Precondition precondition) {
@@ -47,20 +56,31 @@ public class OfferManagementService {
       requireUniqueTitle(actor, terms.title());
     }
     offer.updateTerms(terms, clock.instant());
-    return repository.save(offer);
+    return saveAndPublish(offer, OfferLifecycleChange.TERMS_UPDATED);
   }
 
   public Offer replaceRules(
       Actor actor, OfferId id, List<EligibilityRule> rules, Precondition precondition) {
-    return apply(actor, id, precondition, (offer, now) -> offer.replaceRules(rules, now));
+    return apply(
+        actor,
+        id,
+        precondition,
+        OfferLifecycleChange.RULES_REPLACED,
+        (offer, now) -> offer.replaceRules(rules, now));
   }
 
   public Offer activate(Actor actor, OfferId id, Precondition precondition) {
-    return apply(actor, id, precondition, (offer, now) -> offer.activate(now));
+    return apply(
+        actor,
+        id,
+        precondition,
+        OfferLifecycleChange.ACTIVATED,
+        (offer, now) -> offer.activate(now));
   }
 
   public Offer pause(Actor actor, OfferId id, Precondition precondition) {
-    return apply(actor, id, precondition, (offer, now) -> offer.pause(now));
+    return apply(
+        actor, id, precondition, OfferLifecycleChange.PAUSED, (offer, now) -> offer.pause(now));
   }
 
   /** Newest offers first; filters are optional. */
@@ -81,10 +101,20 @@ public class OfferManagementService {
   }
 
   private Offer apply(
-      Actor actor, OfferId id, Precondition precondition, BiConsumer<Offer, Instant> change) {
+      Actor actor,
+      OfferId id,
+      Precondition precondition,
+      OfferLifecycleChange lifecycleChange,
+      BiConsumer<Offer, Instant> change) {
     Offer offer = loadForUpdate(actor, id, precondition);
     change.accept(offer, clock.instant());
-    return repository.save(offer);
+    return saveAndPublish(offer, lifecycleChange);
+  }
+
+  private Offer saveAndPublish(Offer offer, OfferLifecycleChange change) {
+    Offer saved = repository.save(offer);
+    events.publish(saved, change);
+    return saved;
   }
 
   private Offer load(Actor actor, OfferId id) {

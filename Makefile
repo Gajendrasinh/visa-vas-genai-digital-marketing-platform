@@ -2,7 +2,7 @@ SHELL := /bin/bash
 COMPOSE := docker compose --env-file .env
 
 .DEFAULT_GOAL := help
-.PHONY: help env build test test-java test-python lint fmt security-scan up-core up-aws down ps logs clean
+.PHONY: help env build test test-java test-python lint fmt security-scan schemas-register schemas-check up-core up-aws down ps logs clean
 
 help: ## List targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n",$$1,$$2}'
@@ -34,6 +34,12 @@ fmt: ## Apply formatters
 
 security-scan: ## OWASP dependency-check (set NVD_API_KEY for reasonable speed)
 	./mvnw -B -Psecurity verify -DskipTests
+
+schemas-register: ## Register event schemas in the local Schema Registry (make up-core first)
+	./mvnw -B -q -Pschema-registry -pl platform/event-schemas process-classes schema-registry:register
+
+schemas-check: ## Fail if event schemas are incompatible with those registered
+	./mvnw -B -Pschema-registry -pl platform/event-schemas verify -DskipTests
 
 up-core: env ## Start core infrastructure (+ LocalStack if LOCALSTACK_AUTH_TOKEN is set)
 	@if grep -qE '^LOCALSTACK_AUTH_TOKEN=.+' .env; then \
