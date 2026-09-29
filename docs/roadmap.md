@@ -2,6 +2,14 @@
 
 Each phase ends with the same gate: **build → test → review → fix → document → static analysis**. The next phase starts only when the gate is green. "Done" means verified by an executed test or run, never by assertion.
 
+## Progress
+
+| Phase | Status | Verified by |
+|---|---|---|
+| 0 Architecture + ADRs | Done | Review; ADR-001…023 |
+| 1 Repository + build | Done | `./mvnw verify`, `uv run pytest`, `make up-core` healthy with the topic catalog, schema isolation and Keycloak roles checked |
+| 2 Core domain + PostgreSQL | Done | 164 Java tests: domain, Testcontainers Postgres (migrations run as the least-privileged role), ArchUnit hexagonal rules, SpotBugs clean, ≥ 94 % line coverage per service |
+
 ## Changes to the requested phase order
 
 The requested order (security in phase 13, testing in 15, Docker in 16) would produce ten phases of untested, unauthenticated code. This order was changed:

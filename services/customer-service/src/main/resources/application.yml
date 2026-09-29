@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: customer-service
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/vasmkt}
+    username: ${DB_USERNAME:svc_customer}
+    # No default: the service refuses to start without a configured credential.
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: customer
+        default_batch_fetch_size: 50
+        jdbc:
+          time_zone: UTC
+  flyway:
+    schemas: customer
+    default-schema: customer
+    create-schemas: false
+
+server:
+  port: ${SERVER_PORT:8081}
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  structured:
+    format:
+      console: ecs
+
+customer:
+  pii:
+    # Base64-encoded 256-bit keys. Locally from .env; in AWS from Secrets Manager (KMS-encrypted).
+    # Old versions stay listed so existing ciphertext remains readable after rotation.
+    active-key-version: ${CUSTOMER_PII_ACTIVE_KEY_VERSION:1}
+    keys:
+      "1": ${CUSTOMER_PII_KEY_V1}
+    hmac-key: ${CUSTOMER_PII_HMAC_KEY}

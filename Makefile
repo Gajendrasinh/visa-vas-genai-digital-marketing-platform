@@ -7,8 +7,8 @@ COMPOSE := docker compose --env-file .env
 help: ## List targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n",$$1,$$2}'
 
-env: ## Create .env from .env.example if missing
-	@test -f .env && echo ".env exists (unchanged)" || (cp .env.example .env && echo "Created .env from .env.example")
+env: ## Create .env, or add settings missing from it (never overwrites existing values)
+	@./scripts/sync-env.sh
 
 build: test ## Full build: compile, tests, static analysis, coverage gates (Java + Python)
 

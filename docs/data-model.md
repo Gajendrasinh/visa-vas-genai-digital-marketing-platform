@@ -99,6 +99,8 @@ erDiagram
   }
 ```
 
+> **As implemented (Phase 2):** preferences and consent are columns of `customers`. They are 1:1 and always read together, so a separate table only added a join. `email_hmac` is keyed by tenant (HMAC over `tenantId:email`). Each PII ciphertext is bound through AES-GCM associated data to `customers:<tenant>:<id>:<column>`. `customer_features` arrives with the profile consumer in Phase 6.
+
 Indexes: `customers(tenant_id, status)`, unique `customers(tenant_id, email_hmac)`, `merchants(category)`, `customer_features(tenant_id, last_activity_at)`.
 RLS: enabled on `customers`, `customer_preferences`, `customer_features`.
 Feature upserts are guarded: `... ON CONFLICT (customer_id) DO UPDATE ... WHERE customer_features.as_of_event_time < EXCLUDED.as_of_event_time`, so out-of-order profile events never regress state.

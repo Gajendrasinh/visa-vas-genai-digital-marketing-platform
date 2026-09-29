@@ -18,7 +18,13 @@
   <name>VAS Digital Marketing Platform</name>
 
   <modules>
+    <module>platform/common-types</module>
     <module>platform/common-web</module>
+    <module>platform/test-support</module>
+    <module>services/campaign-service</module>
+    <module>services/offer-service</module>
+    <module>services/segmentation-service</module>
+    <module>services/customer-service</module>
   </modules>
 
   <properties>
@@ -56,6 +62,16 @@
       <dependency>
         <groupId>com.vasmarketing</groupId>
         <artifactId>common-web</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.vasmarketing</groupId>
+        <artifactId>common-types</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.vasmarketing</groupId>
+        <artifactId>test-support</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
