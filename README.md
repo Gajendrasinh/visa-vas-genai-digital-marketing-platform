@@ -4,7 +4,7 @@ A reference platform for issuer-run, card-linked digital marketing: real-time be
 
 All data is synthetic. The project is inspired by public descriptions of card-network value-added services and uses no proprietary implementation details.
 
-**Status: Phases 0–2 complete (architecture, build, core domain + PostgreSQL). Next: Phase 3, REST APIs + security baseline.** See [docs/roadmap.md](docs/roadmap.md).
+**Status: Phases 0–3 complete (architecture, build, core domain + PostgreSQL, REST APIs + security). Next: Phase 4, Kafka + transactional outbox.** See [docs/roadmap.md](docs/roadmap.md).
 
 ## Local setup
 
@@ -25,6 +25,10 @@ make down       # stop (volumes kept); `make clean` also deletes volumes
 | Redis | `localhost:6379` | password `REDIS_PASSWORD` |
 | Keycloak | `http://localhost:8180` realm `vasmkt` | demo users `admin, manager, approver, analyst, data, aiops, viewer` / `KEYCLOAK_DEMO_USER_PASSWORD` |
 | LocalStack | `http://localhost:4566` | needs `LOCALSTACK_AUTH_TOKEN` (free Hobby plan); S3, KMS, Secrets Manager |
+
+Service ports: gateway 8080, customer 8081, segmentation 8082, offer 8083, campaign 8084. Each serves OpenAPI at `/v3/api-docs` and Swagger UI at `/swagger-ui.html`.
+
+Local tokens: the realm's `vasmkt-local-cli` client (local only) allows a password grant. Demo users belong to tenant `issuer-alpha`, except `manager-beta` (`issuer-beta`). With `make up-core`, gateway and campaign-service running, `./scripts/smoke-api.sh` exercises token → gateway → service → Postgres, including four-eyes approval and tenant isolation.
 
 LLM provider is chosen with `AI_PROVIDER` in `.env` (`stub` by default; `anthropic`, `openai`, `bedrock`, `ollama`). All values in `.env.example` are placeholders.
 

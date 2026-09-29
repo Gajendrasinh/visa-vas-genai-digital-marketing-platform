@@ -12,6 +12,7 @@ import com.vasmarketing.offer.domain.model.OfferErrors;
 import com.vasmarketing.offer.domain.model.OfferStatus;
 import com.vasmarketing.platform.testsupport.ServicePostgres;
 import com.vasmarketing.platform.types.Actor;
+import com.vasmarketing.platform.types.Precondition;
 import com.vasmarketing.platform.types.ResourceNotFound;
 import com.vasmarketing.platform.types.TenantId;
 import com.vasmarketing.platform.types.UserId;
@@ -37,7 +38,7 @@ class OfferPersistenceIntegrationTest {
   void persistsTermsRulesAndStatus() {
     Offer created =
         offers.create(ADMIN, travelTerms("Persisted " + UUID.randomUUID()), travelRules());
-    offers.activate(ADMIN, created.id());
+    offers.activate(ADMIN, created.id(), Precondition.none());
 
     Offer reloaded = offers.get(ADMIN, created.id());
 
@@ -53,7 +54,7 @@ class OfferPersistenceIntegrationTest {
     List<EligibilityRule> replacement =
         List.of(new EligibilityRule.ConsentRequired(), new EligibilityRule.MinTransactions30d(10));
 
-    Offer updated = offers.replaceRules(ADMIN, created.id(), replacement);
+    Offer updated = offers.replaceRules(ADMIN, created.id(), replacement, Precondition.none());
 
     assertThat(updated.ruleSetVersion()).isEqualTo(2);
     assertThat(offers.get(ADMIN, created.id()).rules()).containsExactlyElementsOf(replacement);
@@ -75,11 +76,12 @@ class OfferPersistenceIntegrationTest {
   @Test
   void pausedOfferTermsCanBeUpdated() {
     Offer created = offers.create(ADMIN, travelTerms("Pause " + UUID.randomUUID()), travelRules());
-    offers.activate(ADMIN, created.id());
-    offers.pause(ADMIN, created.id());
+    offers.activate(ADMIN, created.id(), Precondition.none());
+    offers.pause(ADMIN, created.id(), Precondition.none());
 
     String renamed = "Renamed " + UUID.randomUUID();
-    Offer updated = offers.updateTerms(ADMIN, created.id(), travelTerms(renamed));
+    Offer updated =
+        offers.updateTerms(ADMIN, created.id(), travelTerms(renamed), Precondition.none());
 
     assertThat(updated.terms().title()).isEqualTo(renamed);
     assertThat(updated.status()).isEqualTo(OfferStatus.PAUSED);

@@ -54,7 +54,70 @@
         "pkce.code.challenge.method": "S256",
         "post.logout.redirect.uris": "http://localhost:5173/*"
       },
-      "fullScopeAllowed": true
+      "fullScopeAllowed": true,
+      "protocolMappers": [
+        {
+          "name": "tenant_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "tenant_id",
+            "claim.name": "tenant_id",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "false",
+            "aggregate.attrs": "false",
+            "multivalued": "false"
+          }
+        },
+        {
+          "name": "vasmkt-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.custom.audience": "vasmkt-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "vasmkt-local-cli",
+      "name": "LOCAL DEVELOPMENT ONLY - password grant for scripts/tests",
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "implicitFlowEnabled": false,
+      "fullScopeAllowed": true,
+      "protocolMappers": [
+        {
+          "name": "tenant_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "tenant_id",
+            "claim.name": "tenant_id",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "false",
+            "aggregate.attrs": "false",
+            "multivalued": "false"
+          }
+        },
+        {
+          "name": "vasmkt-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.custom.audience": "vasmkt-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
     }
   ],
   "users": [
@@ -74,6 +137,9 @@
       ],
       "realmRoles": [
         "MARKETING_ADMIN"
+      ],
+      "groups": [
+        "/issuer-alpha"
       ]
     },
     {
@@ -92,6 +158,9 @@
       ],
       "realmRoles": [
         "CAMPAIGN_MANAGER"
+      ],
+      "groups": [
+        "/issuer-alpha"
       ]
     },
     {
@@ -110,6 +179,9 @@
       ],
       "realmRoles": [
         "CAMPAIGN_MANAGER"
+      ],
+      "groups": [
+        "/issuer-alpha"
       ]
     },
     {
@@ -128,6 +200,9 @@
       ],
       "realmRoles": [
         "MARKETING_ANALYST"
+      ],
+      "groups": [
+        "/issuer-alpha"
       ]
     },
     {
@@ -146,6 +221,9 @@
       ],
       "realmRoles": [
         "DATA_ANALYST"
+      ],
+      "groups": [
+        "/issuer-alpha"
       ]
     },
     {
@@ -164,6 +242,9 @@
       ],
       "realmRoles": [
         "AI_OPERATOR"
+      ],
+      "groups": [
+        "/issuer-alpha"
       ]
     },
     {
@@ -182,7 +263,49 @@
       ],
       "realmRoles": [
         "READ_ONLY"
+      ],
+      "groups": [
+        "/issuer-alpha"
       ]
+    },
+    {
+      "username": "manager-beta",
+      "email": "manager-beta@vasmkt.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Manager",
+      "lastName": "Beta",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${KEYCLOAK_DEMO_USER_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "CAMPAIGN_MANAGER"
+      ],
+      "groups": [
+        "/issuer-beta"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "name": "issuer-alpha",
+      "attributes": {
+        "tenant_id": [
+          "0191f000-0000-7000-8000-000000000001"
+        ]
+      }
+    },
+    {
+      "name": "issuer-beta",
+      "attributes": {
+        "tenant_id": [
+          "0191f000-0000-7000-8000-000000000002"
+        ]
+      }
     }
   ]
 }

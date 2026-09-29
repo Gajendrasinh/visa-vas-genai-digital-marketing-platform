@@ -21,6 +21,7 @@ import com.vasmarketing.campaign.domain.port.CampaignRepository;
 import com.vasmarketing.platform.testsupport.ServicePostgres;
 import com.vasmarketing.platform.types.Actor;
 import com.vasmarketing.platform.types.DomainRuleViolation;
+import com.vasmarketing.platform.types.Precondition;
 import com.vasmarketing.platform.types.ResourceNotFound;
 import com.vasmarketing.platform.types.TenantId;
 import com.vasmarketing.platform.types.UserId;
@@ -67,15 +68,19 @@ class CampaignPersistenceIntegrationTest {
             CreateCampaignCommand.manual(details(uniqueName(), Channel.EMAIL, Channel.PUSH)));
     PromptReference prompt = new PromptReference("campaign_generation", "v2", "claude-sonnet-5");
     VariantId emailVariant =
-        authoring.addVariant(CREATOR, created.id(), email("A"), ContentAuthor.AI, prompt);
+        authoring.addVariant(
+            CREATOR, created.id(), email("A"), ContentAuthor.AI, prompt, Precondition.none());
     VariantId pushVariant =
-        authoring.addVariant(CREATOR, created.id(), push("A"), ContentAuthor.HUMAN, null);
-    authoring.recordCompliance(CREATOR, created.id(), emailVariant, true, "rule pack v1: pass");
-    authoring.recordCompliance(CREATOR, created.id(), pushVariant, true, "rule pack v1: pass");
+        authoring.addVariant(
+            CREATOR, created.id(), push("A"), ContentAuthor.HUMAN, null, Precondition.none());
+    authoring.recordCompliance(
+        CREATOR, created.id(), emailVariant, true, "rule pack v1: pass", Precondition.none());
+    authoring.recordCompliance(
+        CREATOR, created.id(), pushVariant, true, "rule pack v1: pass", Precondition.none());
 
-    lifecycle.submit(CREATOR, created.id());
-    lifecycle.approve(APPROVER, created.id(), "approved for Q4");
-    lifecycle.publish(APPROVER, created.id());
+    lifecycle.submit(CREATOR, created.id(), Precondition.none());
+    lifecycle.approve(APPROVER, created.id(), "approved for Q4", Precondition.none());
+    lifecycle.publish(APPROVER, created.id(), Precondition.none());
 
     Campaign reloaded = queries.get(CREATOR, created.id());
     assertThat(reloaded.status()).isEqualTo(CampaignStatus.SCHEDULED);
@@ -148,9 +153,11 @@ class CampaignPersistenceIntegrationTest {
         authoring.create(
             CREATOR, CreateCampaignCommand.manual(details(uniqueName(), Channel.EMAIL)));
     VariantId variant =
-        authoring.addVariant(CREATOR, created.id(), email("A"), ContentAuthor.HUMAN, null);
+        authoring.addVariant(
+            CREATOR, created.id(), email("A"), ContentAuthor.HUMAN, null, Precondition.none());
 
-    Campaign afterRemoval = authoring.removeVariant(CREATOR, created.id(), variant);
+    Campaign afterRemoval =
+        authoring.removeVariant(CREATOR, created.id(), variant, Precondition.none());
 
     assertThat(afterRemoval.variants()).isEmpty();
     assertThat(queries.get(CREATOR, created.id()).variants()).isEmpty();

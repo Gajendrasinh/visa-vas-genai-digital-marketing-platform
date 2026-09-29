@@ -39,6 +39,14 @@ Roles are Keycloak realm roles mapped to fine-grained permissions in code (`@Pre
 | ai:telemetry:read | ✔ | | | | ✔ | |
 | audit:read | ✔ | | | | ✔ (AI events) | |
 
+**As implemented (Phase 3):**
+- The matrix above lives in code in `platform/common-security` `RolePermissions`. Realm roles become permission authorities in `PlatformJwtAuthenticationConverter`.
+- A token without a valid UUID `tenant_id` claim is rejected with 401.
+- Controllers receive an `Actor` that is resolved only from the verified token.
+- Each service has generated role × endpoint tests: `CampaignAuthorizationMatrixTest` plus the per-service matrix tests.
+- In Keycloak, the tenant comes from group attributes (`issuer-alpha`, `issuer-beta`), and the `vasmkt-api` audience is added by a mapper.
+- `vasmkt-local-cli` (password grant) exists **only in the local realm file**, for scripts and tests.
+
 Enforcement layers: **API** (method security), **service** (use-case checks such as four-eyes and tenant ownership), **data** (tenant predicates, Postgres RLS on PII tables, DB roles per schema) and **retrieval** (OpenSearch filter on `tenant_id`, `allowed_roles`, `access_level`). The frontend hides actions for UX only.
 
 ## 3. Transport, encryption and secrets

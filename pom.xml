@@ -20,7 +20,10 @@
   <modules>
     <module>platform/common-types</module>
     <module>platform/common-web</module>
+    <module>platform/common-security</module>
     <module>platform/test-support</module>
+    <module>platform/common-idempotency</module>
+    <module>services/api-gateway</module>
     <module>services/campaign-service</module>
     <module>services/offer-service</module>
     <module>services/segmentation-service</module>
@@ -35,6 +38,8 @@
     <!-- Release trains (Spring Cloud 2025.1.x is the GA train for Boot 4.0.x, see ADR-011) -->
     <spring-cloud.version>2025.1.3</spring-cloud.version>
     <archunit.version>1.5.1</archunit.version>
+    <!-- springdoc 3.0.x targets Boot 4.0.x; 3.1.x targets Boot 4.1. -->
+    <springdoc.version>3.0.3</springdoc.version>
 
     <!-- Build plugins -->
     <spotless-plugin.version>3.10.3</spotless-plugin.version>
@@ -67,6 +72,21 @@
       <dependency>
         <groupId>com.vasmarketing</groupId>
         <artifactId>common-types</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.vasmarketing</groupId>
+        <artifactId>common-security</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springdoc</groupId>
+        <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        <version>${springdoc.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.vasmarketing</groupId>
+        <artifactId>common-idempotency</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -188,6 +208,7 @@
           <effort>Max</effort>
           <threshold>Medium</threshold>
           <failOnError>true</failOnError>
+          <excludeFilterFile>${maven.multiModuleProjectDirectory}/config/spotbugs-exclude.xml</excludeFilterFile>
         </configuration>
         <executions>
           <execution>
@@ -203,6 +224,12 @@
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
         <version>${jacoco-plugin.version}</version>
+        <configuration>
+          <excludes>
+            <!-- Spring Boot launchers contain only main(); behaviour is covered by context tests. -->
+            <exclude>**/*Application.class</exclude>
+          </excludes>
+        </configuration>
         <executions>
           <execution>
             <id>prepare-agent</id>

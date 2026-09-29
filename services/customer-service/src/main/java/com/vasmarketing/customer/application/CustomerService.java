@@ -8,6 +8,7 @@ import com.vasmarketing.customer.domain.customer.PersonalData;
 import com.vasmarketing.customer.domain.customer.Preferences;
 import com.vasmarketing.platform.types.Actor;
 import com.vasmarketing.platform.types.DomainRuleViolation;
+import com.vasmarketing.platform.types.Precondition;
 import com.vasmarketing.platform.types.ResourceNotFound;
 import java.time.Clock;
 import java.time.Instant;
@@ -43,24 +44,29 @@ public class CustomerService {
             clock.instant()));
   }
 
-  public Customer updateContact(Actor actor, CustomerId id, PersonalData personalData) {
-    return apply(actor, id, (customer, now) -> customer.updateContact(personalData, now));
+  public Customer updateContact(
+      Actor actor, CustomerId id, PersonalData personalData, Precondition precondition) {
+    return apply(
+        actor, id, precondition, (customer, now) -> customer.updateContact(personalData, now));
   }
 
-  public Customer updatePreferences(Actor actor, CustomerId id, Preferences preferences) {
-    return apply(actor, id, (customer, now) -> customer.updatePreferences(preferences, now));
+  public Customer updatePreferences(
+      Actor actor, CustomerId id, Preferences preferences, Precondition precondition) {
+    return apply(
+        actor, id, precondition, (customer, now) -> customer.updatePreferences(preferences, now));
   }
 
-  public Customer grantMarketingConsent(Actor actor, CustomerId id) {
-    return apply(actor, id, (customer, now) -> customer.grantMarketingConsent(now));
+  public Customer grantMarketingConsent(Actor actor, CustomerId id, Precondition precondition) {
+    return apply(actor, id, precondition, (customer, now) -> customer.grantMarketingConsent(now));
   }
 
-  public Customer withdrawMarketingConsent(Actor actor, CustomerId id) {
-    return apply(actor, id, (customer, now) -> customer.withdrawMarketingConsent(now));
+  public Customer withdrawMarketingConsent(Actor actor, CustomerId id, Precondition precondition) {
+    return apply(
+        actor, id, precondition, (customer, now) -> customer.withdrawMarketingConsent(now));
   }
 
-  public Customer close(Actor actor, CustomerId id) {
-    return apply(actor, id, (customer, now) -> customer.close(now));
+  public Customer close(Actor actor, CustomerId id, Precondition precondition) {
+    return apply(actor, id, precondition, (customer, now) -> customer.close(now));
   }
 
   @Transactional(readOnly = true)
@@ -68,8 +74,10 @@ public class CustomerService {
     return load(actor, id);
   }
 
-  private Customer apply(Actor actor, CustomerId id, BiConsumer<Customer, Instant> change) {
+  private Customer apply(
+      Actor actor, CustomerId id, Precondition precondition, BiConsumer<Customer, Instant> change) {
     Customer customer = load(actor, id);
+    precondition.check(customer.version());
     change.accept(customer, clock.instant());
     return repository.save(customer);
   }

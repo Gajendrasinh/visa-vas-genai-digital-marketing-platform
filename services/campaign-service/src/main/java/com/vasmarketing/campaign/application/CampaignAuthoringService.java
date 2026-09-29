@@ -11,6 +11,7 @@ import com.vasmarketing.campaign.domain.model.VariantId;
 import com.vasmarketing.campaign.domain.port.CampaignRepository;
 import com.vasmarketing.platform.types.Actor;
 import com.vasmarketing.platform.types.DomainRuleViolation;
+import com.vasmarketing.platform.types.Precondition;
 import java.time.Clock;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,8 +39,9 @@ public class CampaignAuthoringService {
     return repository.save(campaign);
   }
 
-  public Campaign updateDetails(Actor actor, CampaignId id, CampaignDetails details) {
-    Campaign campaign = loader.load(actor, id);
+  public Campaign updateDetails(
+      Actor actor, CampaignId id, CampaignDetails details, Precondition precondition) {
+    Campaign campaign = loader.loadForUpdate(actor, id, precondition);
     if (!campaign.details().name().equals(details.name())) {
       requireUniqueName(actor, details.name());
     }
@@ -52,22 +54,29 @@ public class CampaignAuthoringService {
       CampaignId id,
       VariantContent content,
       ContentAuthor author,
-      PromptReference prompt) {
-    Campaign campaign = loader.load(actor, id);
+      PromptReference prompt,
+      Precondition precondition) {
+    Campaign campaign = loader.loadForUpdate(actor, id, precondition);
     VariantId variantId = campaign.addVariant(content, author, prompt, clock.instant());
     repository.save(campaign);
     return variantId;
   }
 
-  public Campaign removeVariant(Actor actor, CampaignId id, VariantId variantId) {
-    Campaign campaign = loader.load(actor, id);
+  public Campaign removeVariant(
+      Actor actor, CampaignId id, VariantId variantId, Precondition precondition) {
+    Campaign campaign = loader.loadForUpdate(actor, id, precondition);
     campaign.removeVariant(variantId, clock.instant());
     return repository.save(campaign);
   }
 
   public Campaign recordCompliance(
-      Actor actor, CampaignId id, VariantId variantId, boolean passed, String report) {
-    Campaign campaign = loader.load(actor, id);
+      Actor actor,
+      CampaignId id,
+      VariantId variantId,
+      boolean passed,
+      String report,
+      Precondition precondition) {
+    Campaign campaign = loader.loadForUpdate(actor, id, precondition);
     campaign.recordCompliance(variantId, passed, report, clock.instant());
     return repository.save(campaign);
   }

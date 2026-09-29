@@ -1,0 +1,2 @@
+com.vasmarketing.platform.security.CommonSecurityAutoConfiguration
+com.vasmarketing.platform.security.OpenApiSecurityAutoConfiguration

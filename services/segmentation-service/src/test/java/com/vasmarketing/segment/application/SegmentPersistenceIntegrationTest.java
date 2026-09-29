@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.vasmarketing.platform.testsupport.ServicePostgres;
 import com.vasmarketing.platform.types.Actor;
+import com.vasmarketing.platform.types.Precondition;
 import com.vasmarketing.platform.types.ResourceNotFound;
 import com.vasmarketing.platform.types.TenantId;
 import com.vasmarketing.platform.types.UserId;
@@ -49,7 +50,7 @@ class SegmentPersistenceIntegrationTest {
             "Frequent travelers",
             TRAVELERS,
             SegmentOrigin.AI_PROPOSED);
-    segments.activate(ANALYST, created.id());
+    segments.activate(ANALYST, created.id(), Precondition.none());
 
     Segment reloaded = segments.get(ANALYST, created.id());
 
@@ -68,9 +69,8 @@ class SegmentPersistenceIntegrationTest {
         SegmentDefinitionJson.parse(
             "{\"feature\":\"travel_txn_count_90d\",\"op\":\"gte\",\"value\":6}");
 
-    segments.redefine(ANALYST, created.id(), stricter);
     String newName = "Renamed " + UUID.randomUUID();
-    segments.describe(ANALYST, created.id(), newName, "stricter");
+    segments.update(ANALYST, created.id(), newName, "stricter", stricter, Precondition.none());
 
     Segment reloaded = segments.get(ANALYST, created.id());
     assertThat(reloaded.definition()).isEqualTo(stricter);
@@ -89,7 +89,7 @@ class SegmentPersistenceIntegrationTest {
     Actor other = new Actor(new UserId("data"), new TenantId(UUID.randomUUID()));
     assertThatThrownBy(() -> segments.get(other, created.id()))
         .isInstanceOf(ResourceNotFound.class);
-    assertThatThrownBy(() -> segments.retire(other, created.id()))
+    assertThatThrownBy(() -> segments.retire(other, created.id(), Precondition.none()))
         .isInstanceOf(ResourceNotFound.class);
   }
 }

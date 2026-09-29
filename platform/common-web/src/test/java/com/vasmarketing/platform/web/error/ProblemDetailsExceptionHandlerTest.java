@@ -73,4 +73,29 @@ class ProblemDetailsExceptionHandlerTest {
         .andExpect(status().isMethodNotAllowed())
         .andExpect(jsonPath("$.correlationId").value(CORRELATION_ID));
   }
+
+  @Test
+  void mapsDomainRuleViolationsByServiceProvidedStatus() throws Exception {
+    mvc.perform(get("/test/rule/TEST_RULE_CONFLICT"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.errorCode").value("TEST_RULE_CONFLICT"))
+        .andExpect(jsonPath("$.detail").value("rule TEST_RULE_CONFLICT violated"));
+    mvc.perform(get("/test/rule/UNMAPPED_RULE"))
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(jsonPath("$.errorCode").value("UNMAPPED_RULE"));
+  }
+
+  @Test
+  void mapsNotFoundStalePreconditionAndConcurrentModification() throws Exception {
+    mvc.perform(get("/test/missing"))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.errorCode").value("RESOURCE_NOT_FOUND"))
+        .andExpect(jsonPath("$.title").value("Campaign not found"));
+    mvc.perform(get("/test/stale"))
+        .andExpect(status().isPreconditionFailed())
+        .andExpect(jsonPath("$.errorCode").value("PRECONDITION_FAILED"));
+    mvc.perform(get("/test/race"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.errorCode").value("CONCURRENT_MODIFICATION"));
+  }
 }

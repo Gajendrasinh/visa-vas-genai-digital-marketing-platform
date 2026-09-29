@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: api-gateway
+  threads:
+    virtual:
+      enabled: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${OIDC_ISSUER_URI:http://localhost:8180/realms/vasmkt}
+          audiences: ${OIDC_AUDIENCE:vasmkt-api}
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: campaigns
+              uri: ${CAMPAIGN_SERVICE_URL:http://localhost:8084}
+              predicates:
+                - Path=/api/v1/campaigns/**
+            - id: offers
+              uri: ${OFFER_SERVICE_URL:http://localhost:8083}
+              predicates:
+                - Path=/api/v1/offers/**
+            - id: segments
+              uri: ${SEGMENTATION_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/v1/segments/**
+            - id: customers
+              uri: ${CUSTOMER_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/api/v1/customers/**,/api/v1/merchants/**
+
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+  tomcat:
+    # Request size limit at the edge (docs/security.md §3).
+    max-http-form-post-size: 1MB
+    max-swallow-size: 1MB
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  structured:
+    format:
+      console: ecs

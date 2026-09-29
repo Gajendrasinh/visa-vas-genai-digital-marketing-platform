@@ -11,6 +11,7 @@ import com.vasmarketing.customer.domain.customer.SpendCategory;
 import com.vasmarketing.customer.domain.merchant.Merchant;
 import com.vasmarketing.platform.testsupport.ServicePostgres;
 import com.vasmarketing.platform.types.Actor;
+import com.vasmarketing.platform.types.Precondition;
 import com.vasmarketing.platform.types.ResourceNotFound;
 import com.vasmarketing.platform.types.TenantId;
 import com.vasmarketing.platform.types.UserId;
@@ -70,7 +71,7 @@ class CustomerPersistenceIntegrationTest {
   @Test
   void roundTripsCustomerWithConsentAndPreferences() {
     Customer registered = customers.register(ISSUER_A, command(uniqueEmail()));
-    customers.grantMarketingConsent(ISSUER_A, registered.id());
+    customers.grantMarketingConsent(ISSUER_A, registered.id(), Precondition.none());
 
     Customer reloaded = customers.get(ISSUER_A, registered.id());
 
@@ -133,12 +134,13 @@ class CustomerPersistenceIntegrationTest {
   @Test
   void contactPreferencesAndClosureArePersisted() {
     Customer registered = customers.register(ISSUER_A, command(uniqueEmail()));
-    customers.updatePreferences(ISSUER_A, registered.id(), Preferences.defaults("en-GB"));
+    Precondition none = Precondition.none();
+    customers.updatePreferences(ISSUER_A, registered.id(), Preferences.defaults("en-GB"), none);
     customers.updateContact(
-        ISSUER_A, registered.id(), new PersonalData("Jane Smith", uniqueEmail(), null));
-    customers.grantMarketingConsent(ISSUER_A, registered.id());
-    customers.withdrawMarketingConsent(ISSUER_A, registered.id());
-    Customer closed = customers.close(ISSUER_A, registered.id());
+        ISSUER_A, registered.id(), new PersonalData("Jane Smith", uniqueEmail(), null), none);
+    customers.grantMarketingConsent(ISSUER_A, registered.id(), none);
+    customers.withdrawMarketingConsent(ISSUER_A, registered.id(), none);
+    Customer closed = customers.close(ISSUER_A, registered.id(), none);
 
     Customer reloaded = customers.get(ISSUER_A, closed.id());
     assertThat(reloaded.personalData().fullName()).isEqualTo("Jane Smith");
@@ -151,8 +153,8 @@ class CustomerPersistenceIntegrationTest {
   @Test
   void merchantsRoundTripWithDerivedCategory() {
     Merchant merchant = merchants.register("SkyWays Air", "4511", "US", "Denver");
-    merchants.update(merchant.id(), "SkyWays Airlines", "4511", "Boulder");
-    merchants.deactivate(merchant.id());
+    merchants.update(merchant.id(), "SkyWays Airlines", "4511", "Boulder", Precondition.none());
+    merchants.deactivate(merchant.id(), Precondition.none());
 
     Merchant reloaded = merchants.get(merchant.id());
     assertThat(reloaded.name()).isEqualTo("SkyWays Airlines");

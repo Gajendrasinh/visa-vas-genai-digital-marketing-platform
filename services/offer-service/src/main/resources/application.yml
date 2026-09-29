@@ -21,10 +21,22 @@ spring:
         default_batch_fetch_size: 50
         jdbc:
           time_zone: UTC
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${OIDC_ISSUER_URI:http://localhost:8180/realms/vasmkt}
+          audiences: ${OIDC_AUDIENCE:vasmkt-api}
   flyway:
     schemas: offer
     default-schema: offer
     create-schemas: false
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: ${SWAGGER_UI_ENABLED:true}
 
 server:
   port: ${SERVER_PORT:8083}

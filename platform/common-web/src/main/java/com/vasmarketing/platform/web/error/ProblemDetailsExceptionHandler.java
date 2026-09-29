@@ -1,13 +1,14 @@
 package com.vasmarketing.platform.web.error;
 
-import com.vasmarketing.platform.web.correlation.CorrelationId;
+import com.vasmarketing.platform.types.DomainRuleViolation;
+import com.vasmarketing.platform.types.Precondition;
+import com.vasmarketing.platform.types.ResourceNotFound;
 import jakarta.validation.ConstraintViolationException;
-import java.net.URI;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -28,19 +29,55 @@ public class ProblemDetailsExceptionHandler extends ResponseEntityExceptionHandl
 
   static final String VALIDATION_FAILED = "VALIDATION_FAILED";
   static final String INTERNAL_ERROR = "INTERNAL_ERROR";
+  static final String NOT_FOUND = "RESOURCE_NOT_FOUND";
+  static final String PRECONDITION_FAILED = "PRECONDITION_FAILED";
+  static final String CONCURRENT_MODIFICATION = "CONCURRENT_MODIFICATION";
 
   private static final Logger log = LoggerFactory.getLogger(ProblemDetailsExceptionHandler.class);
+  private static final HttpStatus UNPROCESSABLE = HttpStatus.valueOf(422);
 
-  private final URI problemTypeBase;
+  private final ProblemFactory problems;
+  private final Map<String, HttpStatus> codeStatuses;
 
-  public ProblemDetailsExceptionHandler(URI problemTypeBase) {
-    this.problemTypeBase = problemTypeBase;
+  public ProblemDetailsExceptionHandler(
+      ProblemFactory problems, Map<String, HttpStatus> codeStatuses) {
+    this.problems = problems;
+    this.codeStatuses = Map.copyOf(codeStatuses);
   }
 
   @ExceptionHandler(PlatformException.class)
   ResponseEntity<ProblemDetail> handlePlatformException(PlatformException ex) {
-    ProblemDetail problem = problem(ex.status(), ex.errorCode(), ex.title(), ex.getMessage());
-    return ResponseEntity.status(ex.status()).body(problem);
+    return respond(ex.status(), ex.errorCode(), ex.title(), ex.getMessage());
+  }
+
+  @ExceptionHandler(DomainRuleViolation.class)
+  ResponseEntity<ProblemDetail> handleRuleViolation(DomainRuleViolation ex) {
+    HttpStatus status = codeStatuses.getOrDefault(ex.code(), UNPROCESSABLE);
+    return respond(status, ex.code(), "Business rule violated", ex.getMessage());
+  }
+
+  @ExceptionHandler(ResourceNotFound.class)
+  ResponseEntity<ProblemDetail> handleNotFound(ResourceNotFound ex) {
+    return respond(
+        HttpStatus.NOT_FOUND, NOT_FOUND, ex.resourceType() + " not found", ex.getMessage());
+  }
+
+  @ExceptionHandler(Precondition.PreconditionFailed.class)
+  ResponseEntity<ProblemDetail> handlePreconditionFailed(Precondition.PreconditionFailed ex) {
+    return respond(
+        HttpStatus.PRECONDITION_FAILED,
+        PRECONDITION_FAILED,
+        "Resource has changed",
+        ex.getMessage() + "; re-read the resource and retry with its current ETag.");
+  }
+
+  @ExceptionHandler(OptimisticLockingFailureException.class)
+  ResponseEntity<ProblemDetail> handleConcurrentModification(OptimisticLockingFailureException ex) {
+    return respond(
+        HttpStatus.CONFLICT,
+        CONCURRENT_MODIFICATION,
+        "Concurrent modification",
+        "The resource was modified by another request; re-read it and retry.");
   }
 
   @ExceptionHandler(ConstraintViolationException.class)
@@ -55,13 +92,11 @@ public class ProblemDetailsExceptionHandler extends ResponseEntityExceptionHandl
   @ExceptionHandler(Exception.class)
   ResponseEntity<ProblemDetail> handleUnexpected(Exception ex) {
     log.error("Unhandled exception", ex);
-    ProblemDetail problem =
-        problem(
-            HttpStatus.INTERNAL_SERVER_ERROR,
-            INTERNAL_ERROR,
-            "Internal error",
-            "An unexpected error occurred. Quote the correlation ID when reporting it.");
-    return ResponseEntity.internalServerError().body(problem);
+    return respond(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        INTERNAL_ERROR,
+        "Internal error",
+        "An unexpected error occurred. Quote the correlation ID when reporting it.");
   }
 
   @Override
@@ -82,14 +117,14 @@ public class ProblemDetailsExceptionHandler extends ResponseEntityExceptionHandl
   protected ResponseEntity<Object> createResponseEntity(
       Object body, HttpHeaders headers, HttpStatusCode statusCode, WebRequest request) {
     if (body instanceof ProblemDetail problem) {
-      addCorrelationId(problem);
+      ProblemFactory.addCorrelationId(problem);
     }
     return super.createResponseEntity(body, headers, statusCode, request);
   }
 
   private ResponseEntity<ProblemDetail> validationProblem(List<Map<String, String>> violations) {
     ProblemDetail problem =
-        problem(
+        problems.create(
             HttpStatus.BAD_REQUEST,
             VALIDATION_FAILED,
             "Request validation failed",
@@ -98,23 +133,9 @@ public class ProblemDetailsExceptionHandler extends ResponseEntityExceptionHandl
     return ResponseEntity.badRequest().body(problem);
   }
 
-  private ProblemDetail problem(HttpStatus status, String errorCode, String title, String detail) {
-    ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
-    problem.setType(typeFor(errorCode));
-    problem.setTitle(title);
-    problem.setProperty("errorCode", errorCode);
-    addCorrelationId(problem);
-    return problem;
-  }
-
-  private URI typeFor(String errorCode) {
-    String slug = errorCode.toLowerCase(Locale.ROOT).replace('_', '-');
-    String base = problemTypeBase.toString();
-    return URI.create(base.endsWith("/") ? base + slug : base + "/" + slug);
-  }
-
-  private static void addCorrelationId(ProblemDetail problem) {
-    CorrelationId.current().ifPresent(id -> problem.setProperty("correlationId", id));
+  private ResponseEntity<ProblemDetail> respond(
+      HttpStatus status, String errorCode, String title, String detail) {
+    return ResponseEntity.status(status).body(problems.create(status, errorCode, title, detail));
   }
 
   private static Map<String, String> violation(String field, String message) {

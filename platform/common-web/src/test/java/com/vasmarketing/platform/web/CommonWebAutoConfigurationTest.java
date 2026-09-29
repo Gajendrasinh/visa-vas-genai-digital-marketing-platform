@@ -3,6 +3,7 @@ package com.vasmarketing.platform.web;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.vasmarketing.platform.web.error.ProblemDetailsExceptionHandler;
+import com.vasmarketing.platform.web.error.ProblemFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -29,7 +30,9 @@ class CommonWebAutoConfigurationTest {
     webRunner
         .withBean(
             ProblemDetailsExceptionHandler.class,
-            () -> new ProblemDetailsExceptionHandler(java.net.URI.create("https://custom")))
+            () ->
+                new ProblemDetailsExceptionHandler(
+                    new ProblemFactory(java.net.URI.create("https://custom")), java.util.Map.of()))
         .run(
             context ->
                 assertThat(context).getBean(ProblemDetailsExceptionHandler.class).isNotNull());

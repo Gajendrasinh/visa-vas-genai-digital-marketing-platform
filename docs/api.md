@@ -34,6 +34,20 @@ Status: Phase 0 conventions and endpoint catalog. The generated OpenAPI specs (s
 
 Status mapping: `400` validation, `401` unauthenticated, `403` forbidden, `404` not found (also used for other tenants' resources, to avoid ID probing), `409` state conflict / duplicate, `412` stale ETag, `422` idempotency key reuse with different body, `429` rate limited (+`Retry-After`), `503` dependency unavailable (+`Retry-After`), `504` upstream timeout.
 
+### As implemented (Phase 3)
+
+| Concern | Implementation |
+|---|---|
+| Errors | `platform/common-web` `ProblemDetailsExceptionHandler`. Each service declares an `ErrorStatusMapping` from its error codes to HTTP statuses. An unmapped `DomainRuleViolation` returns 422. `ResourceNotFound` returns 404, a stale `If-Match` 412, a missing `If-Match` 428, and an optimistic-lock race 409 `CONCURRENT_MODIFICATION` |
+| 401 / 403 | `platform/common-security`: problem+json from both the filter chain and method security (`@PreAuthorize` on each controller operation) |
+| Idempotency | `platform/common-idempotency`. Endpoints annotated `@Idempotent` require `Idempotency-Key`. Keys are scoped to the principal and bound to method, path, query and body (SHA-256). Completed responses (status < 500) are replayed with `Idempotent-Replayed: true` for 24 h. The same key with a different body returns 422 `IDEMPOTENCY_KEY_REUSED`. A request still in flight returns 409 with `Retry-After`. A 5xx releases the key. Records live in each service's schema under a separate Flyway history (`platform_schema_history`) |
+| ETags | Strong ETag = aggregate version (`"3"`). PUT requires `If-Match`. State transitions accept it optionally. Weak validators are rejected |
+| Pagination | Keyset over UUIDv7 ids, newest first. `limit` 1–100, opaque `cursor` (`INVALID_CURSOR` / `INVALID_PAGE_SIZE` are 400). Listings use constructor projections, so there is no N+1 |
+| OpenAPI | springdoc at `/v3/api-docs` and `/swagger-ui.html` on every service, with the bearer scheme documented automatically |
+| Gateway | `services/api-gateway` (Spring Cloud Gateway Server WebMVC): path routes, JWT validation and correlation IDs at the edge. Services validate the token again |
+
+Deferred to later phases, where their data sources exist: `/offers/{id}/eligibility-check` and `/segments/{id}/members` (Phase 6), `/campaigns/{id}/analytics` (Phase 6), AI endpoints (Phases 8–12).
+
 ## 2. Endpoint catalog
 
 | Method & path | Service | Permission | Notes |
