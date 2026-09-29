@@ -1,0 +1,188 @@
+{
+  "realm": "vasmkt",
+  "enabled": true,
+  "displayName": "VAS Marketing (local)",
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "bruteForceProtected": true,
+  "accessTokenLifespan": 300,
+  "ssoSessionMaxLifespan": 28800,
+  "passwordPolicy": "length(12)",
+  "roles": {
+    "realm": [
+      {
+        "name": "MARKETING_ADMIN",
+        "description": "Full marketing administration"
+      },
+      {
+        "name": "CAMPAIGN_MANAGER",
+        "description": "Create, approve (not own) and publish campaigns"
+      },
+      {
+        "name": "MARKETING_ANALYST",
+        "description": "Read campaigns and analytics, use the copilot"
+      },
+      {
+        "name": "DATA_ANALYST",
+        "description": "Analytics, segments, masked customer profiles"
+      },
+      {
+        "name": "AI_OPERATOR",
+        "description": "Prompts, model routing, evaluations, AI telemetry"
+      },
+      {
+        "name": "READ_ONLY",
+        "description": "Read-only access"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "marketing-console",
+      "name": "Marketing console (SPA)",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "redirectUris": [
+        "http://localhost:5173/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:5173/*"
+      },
+      "fullScopeAllowed": true
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "email": "admin@vasmkt.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Admin",
+      "lastName": "Demo",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${KEYCLOAK_DEMO_USER_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "MARKETING_ADMIN"
+      ]
+    },
+    {
+      "username": "manager",
+      "email": "manager@vasmkt.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Manager",
+      "lastName": "Demo",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${KEYCLOAK_DEMO_USER_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "CAMPAIGN_MANAGER"
+      ]
+    },
+    {
+      "username": "approver",
+      "email": "approver@vasmkt.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Approver",
+      "lastName": "Demo",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${KEYCLOAK_DEMO_USER_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "CAMPAIGN_MANAGER"
+      ]
+    },
+    {
+      "username": "analyst",
+      "email": "analyst@vasmkt.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Analyst",
+      "lastName": "Demo",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${KEYCLOAK_DEMO_USER_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "MARKETING_ANALYST"
+      ]
+    },
+    {
+      "username": "data",
+      "email": "data@vasmkt.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Data",
+      "lastName": "Demo",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${KEYCLOAK_DEMO_USER_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "DATA_ANALYST"
+      ]
+    },
+    {
+      "username": "aiops",
+      "email": "aiops@vasmkt.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Aiops",
+      "lastName": "Demo",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${KEYCLOAK_DEMO_USER_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "AI_OPERATOR"
+      ]
+    },
+    {
+      "username": "viewer",
+      "email": "viewer@vasmkt.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Viewer",
+      "lastName": "Demo",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${KEYCLOAK_DEMO_USER_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "READ_ONLY"
+      ]
+    }
+  ]
+}

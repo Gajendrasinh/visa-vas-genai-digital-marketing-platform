@@ -1,0 +1,78 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  java:
+    name: Java build (verify)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+      - name: Verify (tests, Spotless, SpotBugs, JaCoCo, enforcer)
+        run: ./mvnw -B verify
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: "**/target/surefire-reports/"
+
+  python:
+    name: Python build (ruff, mypy, pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --all-packages --locked
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run mypy services/ai-orchestrator/src services/ai-orchestrator/tests
+      - run: uv run pytest
+        working-directory: services/ai-orchestrator
+
+  compose:
+    name: Local stack (core profile) boots healthy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: cp .env.example .env
+      - run: docker compose --env-file .env --profile core config -q
+      - run: docker compose --env-file .env --profile core up -d --wait --wait-timeout 300
+      - name: Topic catalog created
+        run: docker compose --env-file .env --profile core logs kafka-init | grep -q "knowledge.document.events"
+      - name: Service roles cannot read other schemas
+        run: |
+          docker compose --env-file .env exec -T -e PGPASSWORD=change-me-local-service postgres \
+            psql -U svc_campaign -d vasmkt -v ON_ERROR_STOP=1 -c "create table t(id int); drop table t;"
+          ! docker compose --env-file .env exec -T -e PGPASSWORD=change-me-local-service postgres \
+            psql -U svc_campaign -d vasmkt -v ON_ERROR_STOP=1 -c "create table customer.t(id int);"
+      - if: always()
+        run: docker compose --env-file .env --profile core down -v
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,24 @@
+# Secrets
+.env
+*.tfvars
+!*.tfvars.example
+# Java / Maven
+target/
+.mvn/wrapper/maven-wrapper.jar
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store

@@ -1,0 +1,22 @@
+# uv workspace for the Python services (ADR-022). Java modules are built by Maven (pom.xml).
+[tool.uv.workspace]
+members = ["services/ai-orchestrator"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "N", "S", "SIM", "RUF", "ASYNC", "PT"]
+
+[tool.ruff.lint.per-file-ignores]
+# pytest uses bare asserts by design.
+"**/tests/**" = ["S101"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+plugins = ["pydantic.mypy"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["ai_orchestrator"]

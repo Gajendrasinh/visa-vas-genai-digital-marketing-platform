@@ -1,0 +1,18 @@
+# Local topic catalog (docs/kafka.md §2). Format: name partitions [config=value ...]
+# Local partition counts are reduced; customer-keyed topics keep equal counts for co-partitioning.
+transaction.events 3 retention.ms=604800000
+customer.events 3 retention.ms=604800000
+engagement.events 3 retention.ms=604800000
+merchant.reference 1 cleanup.policy=compact
+customer.profile.updated 3 cleanup.policy=compact min.compaction.lag.ms=3600000
+segment.membership.changed 3 retention.ms=604800000
+offer.events 1 retention.ms=2592000000
+offer.eligibility.determined 3 retention.ms=259200000
+campaign.events 1 retention.ms=2592000000
+notification.requests 3 retention.ms=259200000
+campaign.conversion 3 retention.ms=2592000000
+campaign.metrics 3 cleanup.policy=compact,delete retention.ms=604800000
+stream.late.events 1 retention.ms=1209600000
+ai.events 1 retention.ms=604800000
+audit.events 3 retention.ms=2592000000
+knowledge.document.events 1 retention.ms=604800000
